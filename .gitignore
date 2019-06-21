@@ -1,0 +1,14 @@
+*.pyc
+*.egg-info
+*.egg
+
+# PyPI-specific dirs
+dist/
+build/
+dist-old/
+
+# for when we add tests
+kim.log
+/tests/kim.log
+/tests/__pycache__/
+/tests/*/__pycache__/
