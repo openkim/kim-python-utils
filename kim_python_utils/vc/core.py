@@ -250,7 +250,9 @@ class VerificationCheck(object):
         # Open report file and write header
         try:
             self.report = open(
-                os.path.abspath("output/report.txt"), "w", encoding="utf-8"
+                os.path.abspath(os.path.join("output", "report.txt")),
+                "w",
+                encoding="utf-8",
             )
             self.report_ready = True
         except (OSError, IOError):
@@ -329,7 +331,11 @@ class VerificationCheck(object):
             undefined=jinja2.StrictUndefined,
         )
         # Template the EDN output
-        with open(os.path.abspath("output/results.edn"), "w", encoding="utf-8") as f:
+        with open(
+            os.path.abspath(os.path.join("output", "results.edn")),
+            "w",
+            encoding="utf-8",
+        ) as f:
             template = template_environment.get_template(
                 os.path.abspath("results.edn.tpl")
             )
@@ -348,7 +354,7 @@ class VerificationCheck(object):
                 "aux file but directory 'output' is not ready.\n"
             )
 
-        Atoms.write(atoms, "output/" + aux_file, format=format)
+        Atoms.write(atoms, os.path.join("output", aux_file), format=format)
 
     ############################################################################
     def write_aux_x_y(self, aux_file, x, y):
@@ -365,7 +371,9 @@ class VerificationCheck(object):
                 "aux file but directory 'output' is not ready.\n"
             )
 
-        with open(os.path.abspath("output/" + aux_file), "w", encoding="utf-8") as f:
+        with open(
+            os.path.abspath(os.path.join("output", aux_file)), "w", encoding="utf-8"
+        ) as f:
             for i in range(0, min(len(x), len(y))):
                 f.write("{0: 11.8e} {1: 11.8e}\n".format(x[i], y[i]))
 
@@ -380,7 +388,9 @@ class VerificationCheck(object):
                 "aux file but directory 'output' is not ready.\n"
             )
 
-        with open(os.path.abspath("output/" + aux_file), "w", encoding="utf-8") as f:
+        with open(
+            os.path.abspath(os.path.join("output", aux_file)), "w", encoding="utf-8"
+        ) as f:
             f.write("{}\n".format(string))
 
 
