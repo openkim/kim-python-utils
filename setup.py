@@ -15,7 +15,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     license="CDDL",
-    install_requires=["numpy >= 1.13.1", "jinja2 >= 2.7.2", "ase >= 3.14.1"],
+    install_requires=["numpy >= 1.13.1", "scipy >= 1.3.0", "jinja2 >= 2.7.2", "ase >= 3.14.1"],
     classifiers=[
         "License :: OSI Approved :: Common Development and Distribution License 1.0 (CDDL-1.0)",
         "Programming Language :: Python :: 2",

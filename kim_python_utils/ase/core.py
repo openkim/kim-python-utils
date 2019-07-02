@@ -50,6 +50,7 @@ __all__ = [
     "check_if_atoms_interacting_force",
     "check_if_atoms_interacting",
     "get_isolated_energy_per_atom",
+    "get_model_energy_cutoff",
     "fractional_coords_transformation",
     "perturb_until_all_forces_sizeable",
     "randomize_positions",
@@ -266,7 +267,7 @@ def rescale_to_get_nonzero_energy(atoms, isolated_energy_per_atom, etol):
     cell = atoms.get_cell()
     energy = atoms.get_potential_energy()
     adjusted_energy = energy - energy_trivial
-    if abs(adjusted_energy) < etol:
+    if abs(adjusted_energy) <= etol:
         pmin = atoms.get_positions().min(axis=0)  # minimum x,y,z coordinates
         pmax = atoms.get_positions().max(axis=0)  # maximum x,y,z coordinates
         extent_along_nonflat_directions = [
@@ -542,6 +543,175 @@ def perturb_until_all_forces_sizeable(
                     "Maximum iterations ({}) exceeded in call to "
                     "function perturb_until_all_forces_sizeable()".format(max_iter)
                 )
+
+
+################################################################################
+def get_model_energy_cutoff(
+    model,
+    symbols,
+    xtol,
+    etol_coarse,
+    etol_fine,
+    offset,
+    max_bisect_iters=1000,
+    max_upper_cutoff_bracket=20.0,
+):
+    """
+    Compute the distance at which energy interactions become non-trival for a given
+    model and a species pair it supports.  This is done by constructing a dimer composed
+    of these species in a large finite box, increasing the separation if necessary until
+    the total potential energy is within 'etol_fine' of the sum of the corresponding
+    isolated energies, and then shrinking the separation until the energy differs from
+    that value by more than 'etol_coarse'.  Using these two separations to bound the
+    search range, bisection is used to refine in order to locate the cutoff.  The
+    'symbols' arg should be a list or tuple of length 2 indicating which species pair to
+    check, e.g. to get the energy cutoff of Al with Al, one should specify ['Al', 'Al'].
+
+    This function is based on the content of the DimerContinuityC1__VC_303890932454_002
+    Verification Check in OpenKIM [1-3].
+
+    [1] Tadmor E. Verification Check of Dimer C1 Continuity v002. OpenKIM; 2018.
+        doi:10.25950/43d2c6d5
+
+    [2] Tadmor EB, Elliott RS, Sethna JP, Miller RE, Becker CA. The potential of
+        atomistic simulations and the Knowledgebase of Interatomic Models. JOM.
+        2011;63(7):17. doi:10.1007/s11837-011-0102-6
+
+    [3] Elliott RS, Tadmor EB. Knowledgebase of Interatomic Models (KIM) Application
+        Programming Interface (API). OpenKIM; 2011. doi:10.25950/ff8f563a
+    """
+    from scipy.optimize import bisect
+
+    def get_dimer_positions(a, large_cell_len):
+        """
+        Generate positions for a dimer of length 'a' centered in a finite simulation box
+        with side length 'large_cell_len'
+        """
+        half_cell = 0.5 * large_cell_len
+        positions = [
+            [half_cell - 0.5 * a, half_cell, half_cell],
+            [half_cell + 0.5 * a, half_cell, half_cell],
+        ]
+        return positions
+
+    def energy(a, dimer, large_cell_len, offset):
+        dimer.set_positions(get_dimer_positions(a, large_cell_len))
+        return dimer.get_potential_energy()
+
+    def energy_cheat(a, dimer, large_cell_len, offset):
+        dimer.set_positions(get_dimer_positions(a, large_cell_len))
+        return dimer.get_potential_energy() + offset
+
+    if not isinstance(symbols, (list, tuple)) or len(symbols) != 2:
+        raise ValueError(
+            "Argument 'symbols' passed to check_if_atoms_interacting_energy "
+            "must be a list of tuple of length 2 indicating the species pair to "
+            "check"
+        )
+
+    isolated_energy_per_atom = {}
+    isolated_energy_per_atom[symbols[0]] = get_isolated_energy_per_atom(
+        model, symbols[0]
+    )
+    isolated_energy_per_atom[symbols[1]] = get_isolated_energy_per_atom(
+        model, symbols[1]
+    )
+    einf = isolated_energy_per_atom[symbols[0]] + isolated_energy_per_atom[symbols[1]]
+
+    # First, establish the upper bracket cutoff by starting at 'b_init' Angstroms and
+    # incrementing by 'db' until
+    b_init = 4.0
+
+    # Create finite box of size large_cell_len
+    large_cell_len = 50
+    dimer = Atoms(
+        symbols,
+        positions=get_dimer_positions(b_init, large_cell_len),
+        cell=(large_cell_len, large_cell_len, large_cell_len),
+        pbc=(False, False, False),
+    )
+    calc = KIM(model)
+    dimer.set_calculator(calc)
+
+    db = 2.0
+    b = b_init
+    still_interacting = True
+    while still_interacting:
+        b += db
+        if b > max_upper_cutoff_bracket:
+            if hasattr(calc, "__del__"):
+                calc.__del__()
+
+            raise KIMASEError(
+                "Exceeded limit on upper bracket when determining cutoff "
+                "search range"
+            )
+        else:
+            eb = energy(b, dimer, large_cell_len)
+            if abs(eb - einf) < etol_fine:
+                still_interacting = False
+
+    a = b
+    da = 0.01
+    not_interacting = True
+    while not_interacting:
+        a -= da
+        if a < 0:
+            if hasattr(calc, "__del__"):
+                calc.__del__()
+
+            raise RuntimeError(
+                "Failed to determine lower bracket for cutoff search using etol_coarse "
+                "= {}.  This may mean that the species pair provided ({}) does not "
+                "have a non-trivial energy interaction for the potential being "
+                "used.".format(etol_coarse, symbols)
+            )
+        else:
+            ea = energy(a, dimer, large_cell_len)
+            if abs(ea - einf) > etol_coarse:
+                not_interacting = False
+
+    # NOTE: Some Simulator Models have a history dependence due to them maintaining
+    #       charges from the previous energy evaluation to use as an initial guess
+    #       for the next charge equilibration.  We therefore have to treat them not
+    #       as single-valued functions but as distributions, i.e.  for a given
+    #       configuration you might get any of a range of energy values depending on
+    #       the history of your previous energy evaluations.  This is particularly
+    #       problematic for this step, where we set up a bisection problem in order
+    #       to determine the cutoff radius of the model.  Our solution for this
+    #       specific case is to make a very crude estimate of the variance of that
+    #       distribution with a 10% factor of safety on it.
+    eb_new = energy(b, dimer, large_cell_len)
+    eb_error = abs(eb_new - eb)
+
+    # compute offset to ensure that energy before and after cutoff have
+    # different signs
+    if ea < eb:
+        offset = -eb + 1.1 * eb_error + np.finfo(float).eps
+    else:
+        offset = -eb - 1.1 * eb_error - np.finfo(float).eps
+
+    rcut, results = bisect(
+        energy_cheat,
+        a,
+        b,
+        args=(dimer, large_cell_len, offset),
+        full_output=True,
+        xtol=xtol,
+        maxiter=max_bisect_iters,
+    )
+
+    # General clean-up
+    if hasattr(calc, "__del__"):
+        calc.__del__()
+
+    if not results.converged:
+        raise RuntimeError(
+            "Bisection search to find cutoff distance did not converge "
+            "within {} iterations with xtol = {}".format(max_bisect_iters, xtol)
+        )
+    else:
+        return rcut
 
 
 # If called directly, do nothing
