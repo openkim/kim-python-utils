@@ -549,10 +549,9 @@ def perturb_until_all_forces_sizeable(
 def get_model_energy_cutoff(
     model,
     symbols,
-    xtol,
-    etol_coarse,
-    etol_fine,
-    offset,
+    xtol=1e-8,
+    etol_coarse=1e-6,
+    etol_fine=1e-15,
     max_bisect_iters=1000,
     max_upper_cutoff_bracket=20.0,
 ):
