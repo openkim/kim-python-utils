@@ -593,7 +593,7 @@ def get_model_energy_cutoff(
         ]
         return positions
 
-    def energy(a, dimer, large_cell_len, offset):
+    def energy(a, dimer, large_cell_len):
         dimer.set_positions(get_dimer_positions(a, large_cell_len))
         return dimer.get_potential_energy()
 
