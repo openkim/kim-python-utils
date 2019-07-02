@@ -633,7 +633,7 @@ def get_model_energy_cutoff(
     dimer.set_calculator(calc)
 
     db = 2.0
-    b = b_init
+    b = b_init - db
     still_interacting = True
     while still_interacting:
         b += db
