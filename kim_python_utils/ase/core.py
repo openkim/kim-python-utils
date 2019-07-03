@@ -593,13 +593,13 @@ def get_model_energy_cutoff(
         ]
         return positions
 
-    def energy(a, dimer, large_cell_len):
+    def energy(a, dimer, large_cell_len, einf):
         dimer.set_positions(get_dimer_positions(a, large_cell_len))
-        return dimer.get_potential_energy()
+        return dimer.get_potential_energy() - einf
 
-    def energy_cheat(a, dimer, large_cell_len, offset):
+    def energy_cheat(a, dimer, large_cell_len, offset, einf):
         dimer.set_positions(get_dimer_positions(a, large_cell_len))
-        return dimer.get_potential_energy() + offset
+        return (dimer.get_potential_energy() - einf) + offset
 
     if not isinstance(symbols, (list, tuple)) or len(symbols) != 2:
         raise ValueError(
@@ -646,8 +646,8 @@ def get_model_energy_cutoff(
                 "search range"
             )
         else:
-            eb = energy(b, dimer, large_cell_len)
-            if abs(eb - einf) < etol_fine:
+            eb = energy(b, dimer, large_cell_len, einf)
+            if abs(eb) < etol_fine:
                 still_interacting = False
 
     a = b
@@ -666,8 +666,8 @@ def get_model_energy_cutoff(
                 "used.".format(etol_coarse, symbols)
             )
         else:
-            ea = energy(a, dimer, large_cell_len)
-            if abs(ea - einf) > etol_coarse:
+            ea = energy(a, dimer, large_cell_len, einf)
+            if abs(ea) > etol_coarse:
                 not_interacting = False
 
     # NOTE: Some Simulator Models have a history dependence due to them maintaining
@@ -680,7 +680,7 @@ def get_model_energy_cutoff(
     #       to determine the cutoff radius of the model.  Our solution for this
     #       specific case is to make a very crude estimate of the variance of that
     #       distribution with a 10% factor of safety on it.
-    eb_new = energy(b, dimer, large_cell_len)
+    eb_new = energy(b, dimer, large_cell_len, einf)
     eb_error = abs(eb_new - eb)
 
     # compute offset to ensure that energy before and after cutoff have
@@ -694,7 +694,7 @@ def get_model_energy_cutoff(
         energy_cheat,
         a,
         b,
-        args=(dimer, large_cell_len, offset),
+        args=(dimer, large_cell_len, offset, einf),
         full_output=True,
         xtol=xtol,
         maxiter=max_bisect_iters,
