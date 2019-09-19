@@ -212,7 +212,8 @@ def get_isolated_energy_per_atom(model, symbol):
     calc = KIM(model)
     single_atom.set_calculator(calc)
     energy_per_atom = single_atom.get_potential_energy()
-    calc.__del__()
+    if hasattr(calc, "__del__"):
+        calc.__del__()
     del single_atom
     return energy_per_atom
 
@@ -337,7 +338,8 @@ def check_if_atoms_interacting_energy(model, symbols, etol):
         atoms_interacting = False
         return atoms_interacting
     finally:
-        calc.__del__()
+        if hasattr(calc, "__del__"):
+            calc.__del__()
         del dimer
 
 
@@ -372,7 +374,8 @@ def check_if_atoms_interacting_force(model, symbols, ftol):
         atoms_interacting = False
         return atoms_interacting
     finally:
-        calc.__del__()
+        if hasattr(calc, "__del__"):
+            calc.__del__()
         del dimer
 
 
