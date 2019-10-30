@@ -41,7 +41,7 @@ from ase import Atoms
 from ase.data import chemical_symbols
 from ase.calculators.kim.kim import KIM
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = ["Ellad B. Tadmor", "Daniel S. Karls"]
 __all__ = [
     "KIMASEError",
@@ -82,12 +82,15 @@ def remove_species_not_supported_by_ASE(species):
 
 
 ################################################################################
-def randomize_species(atoms, species):
+def randomize_species(atoms, species, seed=None):
     """
     Given an ASE 'atoms' object, set random element for each atom selected
     from the list of available 'species' in a way that ensures all are
     represented with the same probabilities.
     """
+    if seed is not None:
+        random.seed(seed)
+
     # Indefinitely iterate through species putting them at random
     # unoccupied sites until all atoms are exhausted.
     indices = list(range(len(atoms)))
@@ -151,7 +154,7 @@ def atom_outside_cell_along_nonperiodic_dim(T, atom_coord, pbc, tol=1e-12):
 
 
 ################################################################################
-def randomize_positions(atoms, pert_amp):
+def randomize_positions(atoms, pert_amp, seed=None):
     """
     Given an ASE 'atoms' object, displace all atomic coordinates by a random amount in
     the range [-pert_amp, pert_amp] along *each* dimension.  Note that all atomic
@@ -161,6 +164,9 @@ def randomize_positions(atoms, pert_amp):
     (displacing outside the cell along periodic dimensions is allowed, although it's up
     to the calling function to wrap the positions if they need to be).
     """
+    if seed is not None:
+        random.seed(seed)
+
     pbc = atoms.get_pbc()
     if all(pbc):
         # Don't need to worry about moving atoms outside of cell
