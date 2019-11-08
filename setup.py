@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="kim-python-utils",
-    version="0.1.0",
+    version="0.2.0",
     description=(
         "Helper routines for querying the OpenKIM Repository and writing KIM Tests and Verification Checks"
     ),
