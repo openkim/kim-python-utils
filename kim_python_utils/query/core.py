@@ -10,34 +10,48 @@ __author__ = ["Daniel S. Karls"]
 
 
 def _send_query(params, endpoint):
-    # Convert all parameters to JSON
+    # Convert all parameters (which are python objects) to JSON strings
     for param, val in params.items():
         params[param] = json.dumps(val)
 
-    return requests.post(
-        "https://query.openkim.org/api/{}".format(endpoint), data=params
-    ).json()
+    url = "https://query.openkim.org/api"
+    if endpoint is not None:
+        url = ("/").join((url, endpoint))
+
+    return requests.post(url, data=params).json()
 
 
 def raw_query(**kwargs):
     """
+    Perform a raw mongo query to the OpenKIM Repository.
+
+    Usage Examples
+    --------------
+
+    python:
+
+      ```
+      kim_python_utils.query.raw_query(query={'type':'mo', 'species':'Al'},
+            fields={'kimcode':1}, database='obj', limit=0, project=["kimcode"])
+      ```
+
+    Parameters
+    ----------
+    query
+    fields
+    database
+    sort
+    limit
+    skip
+    distinct
+    project
+    flatten
+    history
+    count
+    map
+    reduce
     """
-    # FIXME: Add doc string
-    # Parts of a raw query (endpoint: api)
-    # query
-    # fields
-    # map
-    # reduce
-    # database
-    # sort
-    # limit
-    # skip
-    # distinct
-    # project
-    # flatten
-    # history
-    # count
-    return _send_query(locals(), "api")
+    return _send_query(kwargs, None)
 
 
 def get_lattice_constant_cubic(
@@ -1685,6 +1699,8 @@ def get_surface_energy_relaxed_cubic(
     """
     return _send_query(locals(), "get_surface_energy_relaxed_cubic")
 
+
+# TODO: Add get_test_result
 
 # If called directly, do nothing
 if __name__ == "__main__":
