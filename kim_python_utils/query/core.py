@@ -23,7 +23,7 @@ def _send_query(params, endpoint):
 
 def raw_query(**kwargs):
     """
-    Perform a raw mongo query to the OpenKIM Repository.
+    Perform a raw mongo query of the OpenKIM Repository
 
     Usage Examples
     --------------
@@ -37,19 +37,62 @@ def raw_query(**kwargs):
 
     Parameters
     ----------
-    query
-    fields
-    database
-    sort
-    limit
-    skip
-    distinct
-    project
-    flatten
-    history
-    count
-    map
-    reduce
+    query : dict
+        Things you want true, expressed as a dictionary of key value pairs,
+        e.g. {"type": "td"} makes sure that all objects are test drivers
+
+    fields : dict
+        Things you want back, as a dictionary of booleans, e.g.  {"type":1,
+        "path":1} returns only the 'type' and 'path' keys in each result
+
+    database : str
+        Database you want; valid options are 'obj', 'data', 'job', 'log', and
+        'agent'
+
+    sort : str or list
+        Keys to sort on, either as a single string or a list with direction,
+        e.g.  "kimcode" sorts on kimcode, [["kimcode", -1]] gives reverse
+        kimcode
+
+    limit : int
+        How many results to return; leave empty or set to 0 to get all results
+
+    skip : int
+        How many results you want to skip (generally used only with sorting)
+
+    distinct : str
+        A single key whose unique values across the results you want to
+        inspect, e.g. "type" would return distinct values of the "type" key
+        across the results matching your query criteria.  Note that this
+        doesn't play well with other options!
+
+    project : list
+        Reduce each result to a list where the elements are given by the order
+        of the keys given i.e. ["kimcode", "species"].  Implies flatten.
+
+    flatten : bool
+        Whether or not to flatten the keys in the dictionary
+
+    history : bool
+        Return full database history. By default, only results with
+        "latest"=True are returned.
+
+    count : int
+        Return only a count of the number of results returned
+
+    map : str
+        A JavaScript function that operates on the map portion of map-reduce.
+        For more information, check the MongoDB docs.
+
+    reduce : str
+        A JavaScript function that constitutes the reduce part of a map-reduce.
+        For more information, check the MongoDB docs.
+
+    Returns
+    -------
+    List containing the specified fields in each of the documents matching the
+    query criteria.  Unless 'project' is used, each matching result document
+    will be a dictionary.
     """
     return _send_query(kwargs, None)
 
