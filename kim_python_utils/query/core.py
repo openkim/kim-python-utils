@@ -34,6 +34,26 @@ import json
 
 __version__ = "0.1.0"
 __author__ = ["Daniel S. Karls"]
+__all__ = [
+    "raw_query",
+    "get_test_result",
+    "get_lattice_constant_cubic",
+    "get_lattice_constant_hexagonal",
+    "get_lattice_constant_2Dhexagonal",
+    "get_cohesive_energy_cubic",
+    "get_cohesive_energy_hexagonal",
+    "get_cohesive_energy_2Dhexagonal",
+    "get_elastic_constants_isothermal_cubic",
+    "get_bulk_modulus_isothermal_cubic",
+    "get_bulk_modulus_isothermal_hexagonal",
+    "get_linear_thermal_expansion_coefficient_cubic",
+    "get_intrinsic_stacking_fault_relaxed_energy_fcc",
+    "get_extrinsic_stacking_fault_relaxed_energy_fcc",
+    "get_unstable_stacking_fault_relaxed_energy_fcc",
+    "get_unstable_twinning_fault_relaxed_energy_fcc",
+    "get_surface_energy_ideal_cubic",
+    "get_surface_energy_relaxed_cubic",
+]
 
 
 def _send_query(params, endpoint):
