@@ -26,7 +26,7 @@
 #     Daniel S. Karls
 #
 ################################################################################
-r"""Simple queries to the OpenKIM Repository database hosted at
+r"""Interface for performing queries to the OpenKIM Repository database hosted at
 https://query.openkim.org.
 """
 import requests
