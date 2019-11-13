@@ -1189,7 +1189,7 @@ def get_linear_thermal_expansion_coefficient_cubic(
 
       ```
       kim_python_utils.query.get_linear_thermal_expansion_coefficient_cubic(["MO_123629422045_005"],
-              ["fcc"], ["Al"], ["1/K"])
+              ["fcc"], ["Al"], ["1/K"], [293.15])
       ```
 
     curl:
@@ -1199,6 +1199,7 @@ def get_linear_thermal_expansion_coefficient_cubic(
            --data-urlencode 'crystal=["fcc"]'               \
            --data-urlencode 'species=["Al"]'                \
            --data-urlencode 'units=["1/K"]'                 \
+           --data-urlencode 'temperature=[293.15]'          \
            https://query.openkim.org/api/get_linear_thermal_expansion_coefficient_cubic
       ```
 
