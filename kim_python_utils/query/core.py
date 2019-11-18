@@ -78,8 +78,9 @@ def raw_query(**kwargs):
     python:
 
       ```
-      kim_python_utils.query.raw_query(query={'type':'mo', 'species':'Al'},
-            fields={'kimcode':1}, database='obj', limit=0, project=["kimcode"])
+      from kim_python_utils.query import raw_query
+      raw_query(query={'type':'mo', 'species':'Al'}, fields={'kimcode':1},
+          database='obj', limit=0, project=["kimcode"])
       ```
 
     Parameters
@@ -167,7 +168,8 @@ def get_test_result(test, model, species, prop, keys, units):
     python:
 
       ```
-      kim_python_utils.query.get_test_result(["TE_156715955670"],
+      from kim_python_utils.query import get_test_result
+      get_test_result(["TE_156715955670"],
           ["MO_123629422045_005"],
           ["Al"],
           ["cohesive-potential-energy-cubic-crystal"],
@@ -256,8 +258,8 @@ def get_lattice_constant_cubic(
     python:
 
       ```
-      kim_python_utils.query.get_lattice_constant_cubic(["MO_123629422045_005"],
-              ["fcc"], ["Al"], ["angstrom"])
+      from kim_python_utils.query import get_lattice_constant_cubic
+      get_lattice_constant_cubic(["MO_123629422045_005"], ["fcc"], ["Al"], ["angstrom"])
       ```
 
     curl:
@@ -375,8 +377,8 @@ def get_lattice_constant_hexagonal(
     python:
 
       ```
-      kim_python_utils.query.get_lattice_constant_hexagonal(["MO_848899341753_000"],
-              ["hcp"], ["Zr"], ["angstrom"])
+      from kim_python_utils.query import get_lattice_constant_hexagonal
+      get_lattice_constant_hexagonal(["MO_848899341753_000"], ["hcp"], ["Zr"], ["angstrom"])
       ```
 
     curl:
@@ -494,8 +496,8 @@ def get_lattice_constant_2Dhexagonal(
     python:
 
       ```
-      kim_python_utils.query.get_lattice_constant_2Dhexagonal(["MO_579868029681_002"],
-              ["graphene-like"], ["C"], ["angstrom"])
+      from kim_python_utils.query import get_lattice_constant_2Dhexagonal
+      get_lattice_constant_2Dhexagonal(["MO_579868029681_002"], ["graphene-like"], ["C"], ["angstrom"])
       ```
 
     curl:
@@ -600,8 +602,8 @@ def get_cohesive_energy_cubic(model, crystal, species, units, method=["relaxatio
     python:
 
       ```
-      kim_python_utils.query.get_cohesive_energy_cubic(["MO_123629422045_005"],
-              ["fcc"], ["Al"], ["eV"])
+      from kim_python_utils.query import get_cohesive_energy_cubic
+      get_cohesive_energy_cubic(["MO_123629422045_005"], ["fcc"], ["Al"], ["eV"])
       ```
 
     curl:
@@ -674,10 +676,9 @@ def get_cohesive_energy_hexagonal(
     python:
 
       ```
-      kim_python_utils.query.get_cohesive_energy_hexagonal(["MO_848899341753_000"],
-              ["hcp"], ["Zr"], ["eV"])
+      from kim_python_utils.query import get_cohesive_energy_hexagonal
+      get_cohesive_energy_hexagonal(["MO_848899341753_000"], ["hcp"], ["Zr"], ["eV"])
       ```
-
 
     curl:
 
@@ -752,8 +753,8 @@ def get_cohesive_energy_2Dhexagonal(
     python:
 
       ```
-      kim_python_utils.query.get_cohesive_energy_2Dhexagonal(["MO_579868029681_002"],
-              ["graphene-like"], ["C"], ["eV"])
+      from kim_python_utils.query import get_cohesive_energy_2Dhexagonal
+      get_cohesive_energy_2Dhexagonal(["MO_579868029681_002"], ["graphene-like"], ["C"], ["eV"])
       ```
 
     curl:
@@ -836,8 +837,8 @@ def get_elastic_constants_isothermal_cubic(
     python:
 
       ```
-      kim_python_utils.query.get_elastic_constants_isothermal_cubic(["MO_123629422045_005"],
-              ["fcc"], ["Al"], ["GPa"])
+      from kim_python_utils.query import get_elastic_constants_isothermal_cubic
+      get_elastic_constants_isothermal_cubic(["MO_123629422045_005"], ["fcc"], ["Al"], ["GPa"])
       ```
 
     curl:
@@ -953,8 +954,8 @@ def get_bulk_modulus_isothermal_cubic(
     python:
 
       ```
-      kim_python_utils.query.get_bulk_modulus_isothermal_cubic(["MO_123629422045_005"],
-              ["fcc"], ["Al"], ["GPa"])
+      from kim_python_utils.query import get_bulk_modulus_isothermal_cubic
+      get_bulk_modulus_isothermal_cubic(["MO_123629422045_005"], ["fcc"], ["Al"], ["GPa"])
       ```
 
     curl:
@@ -1070,8 +1071,8 @@ def get_bulk_modulus_isothermal_hexagonal(
     python:
 
       ```
-      kim_python_utils.query.get_bulk_modulus_isothermal_hexagonal(["MO_848899341753_000"],
-              ["hcp"], ["Zr"], ["GPa"])
+      from kim_python_utils.query import get_bulk_modulus_isothermal_hexagonal
+      get_bulk_modulus_isothermal_hexagonal(["MO_848899341753_000"], ["hcp"], ["Zr"], ["GPa"])
       ```
 
     curl:
@@ -1188,8 +1189,8 @@ def get_linear_thermal_expansion_coefficient_cubic(
     python:
 
       ```
-      kim_python_utils.query.get_linear_thermal_expansion_coefficient_cubic(["MO_123629422045_005"],
-              ["fcc"], ["Al"], ["1/K"], [293.15])
+      from kim_python_utils.query import get_linear_thermal_expansion_coefficient_cubic
+      get_linear_thermal_expansion_coefficient_cubic(["MO_123629422045_005"], ["fcc"], ["Al"], ["1/K"], [293.15])
       ```
 
     curl:
@@ -1305,8 +1306,8 @@ def get_intrinsic_stacking_fault_relaxed_energy_fcc(
     python:
 
       ```
-      kim_python_utils.query.get_intrinsic_stacking_fault_relaxed_energy_fcc(["MO_123629422045_005"],
-              ["Al"], ["eV/angstrom^2"])
+      from kim_python_utils.query import get_intrinsic_stacking_fault_relaxed_energy_fcc
+      get_intrinsic_stacking_fault_relaxed_energy_fcc(["MO_123629422045_005"], ["Al"], ["eV/angstrom^2"])
       ```
 
     curl:
@@ -1402,8 +1403,8 @@ def get_extrinsic_stacking_fault_relaxed_energy_fcc(
     python:
 
       ```
-      kim_python_utils.query.get_extrinsic_stacking_fault_relaxed_energy_fcc(["MO_123629422045_005"],
-              ["Al"], ["eV/angstrom^2"])
+      from kim_python_utils.query import get_extrinsic_stacking_fault_relaxed_energy_fcc
+      get_extrinsic_stacking_fault_relaxed_energy_fcc(["MO_123629422045_005"], ["Al"], ["eV/angstrom^2"])
       ```
 
     curl:
@@ -1500,8 +1501,8 @@ def get_unstable_stacking_fault_relaxed_energy_fcc(
     python:
 
       ```
-      kim_python_utils.query.get_unstable_stacking_fault_relaxed_energy_fcc(["MO_123629422045_005"],
-              ["Al"], ["eV/angstrom^2"])
+      from kim_python_utils.query import get_unstable_stacking_fault_relaxed_energy_fcc
+      get_unstable_stacking_fault_relaxed_energy_fcc(["MO_123629422045_005"], ["Al"], ["eV/angstrom^2"])
       ```
 
     curl:
@@ -1599,8 +1600,8 @@ def get_unstable_twinning_fault_relaxed_energy_fcc(
     python:
 
       ```
-      kim_python_utils.query.get_unstable_twinning_fault_relaxed_energy_fcc(["MO_123629422045_005"],
-              ["Al"], ["eV/angstrom^2"])
+      from kim_python_utils.query import get_unstable_twinning_fault_relaxed_energy_fcc
+      get_unstable_twinning_fault_relaxed_energy_fcc(["MO_123629422045_005"], ["Al"], ["eV/angstrom^2"])
       ```
 
     curl:
@@ -1689,8 +1690,8 @@ def get_surface_energy_ideal_cubic(
     python:
 
       ```
-      kim_python_utils.query.get_surface_energy_ideal_cubic(["MO_123629422045_005"],
-              ["fcc"], ["Al"], [1,0,0], ["eV/angstrom^2"])
+      from kim_python_utils.query import get_surface_energy_ideal_cubic
+      get_surface_energy_ideal_cubic(["MO_123629422045_005"], ["fcc"], ["Al"], [1,0,0], ["eV/angstrom^2"])
       ```
 
     curl:
@@ -1781,8 +1782,8 @@ def get_surface_energy_relaxed_cubic(
     python:
 
       ```
-      kim_python_utils.query.get_surface_energy_relaxed_cubic(["MO_123629422045_005"],
-              ["fcc"], ["Al"], [1,0,0], ["eV/angstrom^2"])
+      from kim_python_utils.query import get_surface_energy_relaxed_cubic
+      get_surface_energy_relaxed_cubic(["MO_123629422045_005"], ["fcc"], ["Al"], [1,0,0], ["eV/angstrom^2"])
       ```
 
     curl:
