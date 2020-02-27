@@ -32,10 +32,11 @@ https://query.openkim.org.
 import requests
 import json
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = ["Daniel S. Karls"]
 __all__ = [
     "raw_query",
+    "get_available_models",
     "get_test_result",
     "get_lattice_constant_cubic",
     "get_lattice_constant_hexagonal",
@@ -143,6 +144,55 @@ def raw_query(**kwargs):
     will be a dictionary.
     """
     return _send_query(kwargs, None)
+
+
+def get_available_models(species, model_type=["all"], exclusive=[False]):
+    r"""Retrieve the latest versions of all models that support a given set of
+    atomic species
+
+    Usage Examples
+    --------------
+
+    python:
+
+      ```
+      from kim_python_utils.query import get_available_models
+      get_available_models(["Al","Fe"], ["sm"], [True])
+      ```
+
+    curl:
+
+      ```
+      curl --data-urlencode 'species=["Al","Fe"]' \
+           --data-urlencode 'model_type=["sm"]'   \
+           --data-urlencode 'exclusive=[true]'    \
+           https://query.openkim.org/api/get_available_models
+      ```
+
+    Parameters
+    ----------
+    species : array of double-quoted strings
+        The standard chemical symbol(s) of all atomic species that the models
+        returned must support, e.g. "Al".
+
+    model_type : array containing one double-quoted string
+        Type of the models that are to be returned.  Specifying "mo" will
+        cause only Portable Models to be returned, while "sm" will cause only
+        Simulator Models to be returned.  If left unspecified, both Portable
+        Models and Simulator Models will be returned.  (Default: "all")
+
+    exclusive : array containing one boolean
+        Whether models returned must support only the species listed (True), or
+        are allowed to support species other than those listed (False).
+        (Default: False)
+
+    Returns
+    -------
+    [models] : array containing zero or more double-quoted strings
+        The latest versions of all models of the specified type(s) that support
+        all of the atomic species given.
+    """
+    return _send_query(locals(), "get_available_models")
 
 
 def get_test_result(test, model, species, prop, keys, units):
