@@ -505,6 +505,13 @@ def perturb_until_all_forces_sizeable(
 
     forces = atoms.get_forces()
     fmax = max(abs(forces.min()), abs(forces.max()))  # find max in abs value
+
+    if fmax <= 1e2 * np.finfo(float).eps:
+        raise KIMASEError(
+            "ERROR: Largest force component on configuration is "
+            "less than or equal to 1e2*machine epsilon. Cannot proceed."
+        )
+
     pmin = atoms.get_positions().min(axis=0)  # minimum x,y,z coordinates
     pmax = atoms.get_positions().max(axis=0)  # maximum x,y,z coordinates
     saved_posns = atoms.get_positions().copy()
