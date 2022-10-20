@@ -441,7 +441,7 @@ def rescale_to_get_nonzero_forces(atoms, ftol):
     # Rescale cell and atoms
     forces = atoms.get_forces()
     if np.isnan(forces).any():
-        raise KIMASEError("ERROR: Computed forces include at least one nan.")
+        raise RuntimeError("ERROR: Computed forces include at least one nan.")
     fmax = max(abs(forces.min()), abs(forces.max()))  # find max in abs value
     if fmax < ftol:
         pmin = atoms.get_positions().min(axis=0)  # minimum x,y,z coordinates
@@ -507,7 +507,7 @@ def perturb_until_all_forces_sizeable(
 
     forces = atoms.get_forces()
     if np.isnan(forces).any():
-        raise KIMASEError("ERROR: Computed forces include at least one nan.")
+        raise RuntimeError("ERROR: Computed forces include at least one nan.")
     fmax = max(abs(forces.min()), abs(forces.max()))  # find max in abs value
 
     if fmax <= 1e2 * np.finfo(float).eps:
@@ -544,7 +544,7 @@ def perturb_until_all_forces_sizeable(
         try:
             forces = atoms.get_forces()
             if np.isnan(forces).any():
-                raise KIMASEError("ERROR: Computed forces include at least one nan.")
+                raise RuntimeError("ERROR: Computed forces include at least one nan.")
             fmax_new = max(abs(forces.min()), abs(forces.max()))
             if fmax_new > maxfact * fmax:
                 # forces too large, abort perturbation
