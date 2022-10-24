@@ -451,9 +451,9 @@ def rescale_to_get_nonzero_forces(atoms, ftol):
         ]
         delpmin = min(extent_along_nonflat_directions)
         while delpmin > np.finfo(delpmin).tiny:
-            atoms.positions *= 0.5  # make configuration half the size
-            cell *= 0.5  # make cell half the size
-            delpmin *= 0.5
+            atoms.positions *= 0.75  # make configuration 3/4 the size
+            cell *= 0.75  # make cell 3/4 the size
+            delpmin *= 0.75
             forces = atoms.get_forces()  # get max force
             fmax = max(abs(forces.min()), abs(forces.max()))
             if fmax >= ftol:
