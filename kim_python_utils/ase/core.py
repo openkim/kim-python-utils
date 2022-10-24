@@ -216,7 +216,7 @@ def get_isolated_energy_per_atom(model, symbol):
         pbc=(False, False, False),
     )
     calc = KIM(model)
-    single_atom.set_calculator(calc)
+    single_atom.calc=calc
     energy_per_atom = single_atom.get_potential_energy()
     if hasattr(calc, "__del__"):
         calc.__del__()
@@ -335,7 +335,7 @@ def check_if_atoms_interacting_energy(model, symbols, etol):
         pbc=(False, False, False),
     )
     calc = KIM(model)
-    dimer.set_calculator(calc)
+    dimer.calc=calc
     try:
         rescale_to_get_nonzero_energy(dimer, isolated_energy_per_atom, etol)
         atoms_interacting = True
@@ -371,7 +371,7 @@ def check_if_atoms_interacting_force(model, symbols, ftol):
         pbc=(False, False, False),
     )
     calc = KIM(model)
-    dimer.set_calculator(calc)
+    dimer.calc=calc
     try:
         rescale_to_get_nonzero_forces(dimer, ftol)
         atoms_interacting = True
@@ -652,7 +652,7 @@ def get_model_energy_cutoff(
         pbc=(False, False, False),
     )
     calc = KIM(model)
-    dimer.set_calculator(calc)
+    dimer.calc=calc
 
     db = 2.0
     b = b_init - db
