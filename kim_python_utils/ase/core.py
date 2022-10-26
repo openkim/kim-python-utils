@@ -216,7 +216,7 @@ def get_isolated_energy_per_atom(model, symbol):
         pbc=(False, False, False),
     )
     calc = KIM(model)
-    single_atom.set_calculator(calc)
+    single_atom.calc=calc
     energy_per_atom = single_atom.get_potential_energy()
     if hasattr(calc, "__del__"):
         calc.__del__()
@@ -335,7 +335,7 @@ def check_if_atoms_interacting_energy(model, symbols, etol):
         pbc=(False, False, False),
     )
     calc = KIM(model)
-    dimer.set_calculator(calc)
+    dimer.calc=calc
     try:
         rescale_to_get_nonzero_energy(dimer, isolated_energy_per_atom, etol)
         atoms_interacting = True
@@ -371,7 +371,7 @@ def check_if_atoms_interacting_force(model, symbols, ftol):
         pbc=(False, False, False),
     )
     calc = KIM(model)
-    dimer.set_calculator(calc)
+    dimer.calc=calc
     try:
         rescale_to_get_nonzero_forces(dimer, ftol)
         atoms_interacting = True
@@ -440,6 +440,8 @@ def rescale_to_get_nonzero_forces(atoms, ftol):
     atoms.set_pbc([False, False, False])
     # Rescale cell and atoms
     forces = atoms.get_forces()
+    if np.isnan(forces).any():
+        raise RuntimeError("ERROR: Computed forces include at least one nan.")
     fmax = max(abs(forces.min()), abs(forces.max()))  # find max in abs value
     if fmax < ftol:
         pmin = atoms.get_positions().min(axis=0)  # minimum x,y,z coordinates
@@ -449,9 +451,9 @@ def rescale_to_get_nonzero_forces(atoms, ftol):
         ]
         delpmin = min(extent_along_nonflat_directions)
         while delpmin > np.finfo(delpmin).tiny:
-            atoms.positions *= 0.5  # make configuration half the size
-            cell *= 0.5  # make cell half the size
-            delpmin *= 0.5
+            atoms.positions *= 0.75  # make configuration 3/4 the size
+            cell *= 0.75  # make cell 3/4 the size
+            delpmin *= 0.75
             forces = atoms.get_forces()  # get max force
             fmax = max(abs(forces.min()), abs(forces.max()))
             if fmax >= ftol:
@@ -504,6 +506,8 @@ def perturb_until_all_forces_sizeable(
                 )
 
     forces = atoms.get_forces()
+    if np.isnan(forces).any():
+        raise RuntimeError("ERROR: Computed forces include at least one nan.")
     fmax = max(abs(forces.min()), abs(forces.max()))  # find max in abs value
 
     if fmax <= 1e2 * np.finfo(float).eps:
@@ -539,6 +543,8 @@ def perturb_until_all_forces_sizeable(
                             atoms[at].position[dof] = coord
         try:
             forces = atoms.get_forces()
+            if np.isnan(forces).any():
+                raise RuntimeError("ERROR: Computed forces include at least one nan.")
             fmax_new = max(abs(forces.min()), abs(forces.max()))
             if fmax_new > maxfact * fmax:
                 # forces too large, abort perturbation
@@ -646,7 +652,7 @@ def get_model_energy_cutoff(
         pbc=(False, False, False),
     )
     calc = KIM(model)
-    dimer.set_calculator(calc)
+    dimer.calc=calc
 
     db = 2.0
     b = b_init - db
