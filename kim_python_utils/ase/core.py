@@ -40,8 +40,12 @@ import numpy as np
 from ase import Atoms
 from ase.data import chemical_symbols
 from ase.calculators.kim.kim import KIM
+from typing import Any, Optional, List
+from abc import ABC, abstractmethod
+from kim_property import kim_property_create, kim_property_modify, kim_property_dump
+import kim_edn
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = ["Ellad B. Tadmor", "Daniel S. Karls"]
 __all__ = [
     "KIMASEError",
@@ -58,6 +62,7 @@ __all__ = [
     "remove_species_not_supported_by_ASE",
     "rescale_to_get_nonzero_energy",
     "rescale_to_get_nonzero_forces",
+    "KIMTest",
 ]
 
 
@@ -734,6 +739,116 @@ def get_model_energy_cutoff(
     else:
         return rcut
 
+
+################################################################################
+class KIMTest(ABC):
+
+    def __init__(self, model_name: str, atoms: Optional[Atoms]=None, filename: str="output/results.edn"):
+        """
+        Args:
+            model_name: 
+                KIM extended-id of the model
+            atoms:
+                ASE atoms object to use as the initial configuration or to build a supercell
+            filename:
+                Path to results.edn file to be written. The default provided is the correct path to work in the KIM Pipeline or KIM Developer Platform
+        """
+        self.model_name = model_name
+        self.model = KIM(model_name)
+        self.atoms = atoms
+        self.property_instances = "[]"
+        self.filename = filename
+
+    @abstractmethod
+    def _calculate(self, *args, **kwargs):
+        raise NotImplementedError("Subclasses must implement the _calculate method.")
+
+    def _write_to_file(self):
+        with open(self.filename,"w") as f:
+            kim_property_dump(self.property_instances,f)
+
+    def __call__(self, *args, **kwargs):
+        """
+        runs test and outputs results
+        """
+        self._calculate(*args, **kwargs)
+        self._write_to_file()
+
+    def add_property_instance(self,property_name:str):
+        """
+        Initialize a new property instance to self.property_instances. It will automatically get the an instance-id
+        equal to the length of self.property_instances after it is added. It assumed that if you are calling this function,
+        you have been only using the simplified property functions in this class and not doing any more advanced editing
+        to self.property_instance using kim_property or any other methods.
+
+        Args:
+            property_name:
+                The property name, e.g. "tag:staff@noreply.openkim.org,2023-02-21:property/binding-energy-crystal" or
+                "binding-energy-crystal"
+        """
+        # DEV NOTE: I like to use the package name when using kim_edn so there's no confusion with json.loads etc.
+        property_instances_deserialized = kim_edn.loads(self.property_instances)
+        new_instance_index = len(property_instances_deserialized)+1
+        for property_instance in property_instances_deserialized:
+            if property_instance["instance-id"] == new_instance_index:
+                raise KIMASEError("instance-id that matches the length of self.property_instances already exists.\n"
+                                   "Was self.property_instances edited directly instead of using this package?")
+        self.property_instances = kim_property_create(new_instance_index,property_name,self.property_instances)
+
+    def add_key_to_current_property_instance(self,name:str,value:Any,units:Optional[str]=None):
+        """
+        TODO: Add uncertainty output
+
+        Write a key to the last element of self.property_instances. If the value is an array,
+        this function will assume you want to write to the beginning of the array in every dimension.
+        This function is intended to write entire keys in one go, and should not be used for modifying
+        existing keys.
+
+        WARNING! It is the developer's responsibility to make sure the array shape matches the extent
+        specified in the property definition. This method uses kim_property.kim_property_modify, and
+        fills the values of array keys as slices through the last dimension. If those slices are incomplete,
+        kim_property automatically initializes the other elements in that slice to zero. For example,
+        consider writing coordinates to a key with extent [":",3]. The correct way to write a single atom
+        would be to provide [[x,y,z]]. If you accidentally provide [[x],[y],[z]], it will fill the
+        field with the coordinates [[x,0,0],[y,0,0],[z,0,0]]. This will not raise an error, only exceeding
+        the allowed dimesnsions of the key will do so.
+
+        Args:
+            name:
+                Name of the key, e.g. "cell-cauchy-stress"
+            value:
+                The value of the key. The function will attempt to convert it to a NumPy array, then
+                use the dimensions of the resulting array. Scalars, lists, tuples, and arrays should work.
+                Data type of the elements should be str, float, or int
+            units:
+                The units
+        """
+        value_arr = np.array(value)
+        value_shape = value_arr.shape
+        current_instance_index = len(kim_edn.loads(self.property_instances))
+        modify_args = ["key",name]
+        if len(value_shape) == 0:
+            modify_args += ["source-value",value]
+        else:
+            def recur_dimensions(prev_indices:List[int],sub_value:np.ndarray,modify_args=list):
+                sub_shape = sub_value.shape
+                assert len(sub_shape) != 0, "Should not have gotten to zero dimensions in the recursive function"
+                if len(sub_shape) == 1:
+                    # only if we have gotten to a 1-dimensional sub-array do we write stuff
+                    modify_args += ["source-value",*prev_indices,"1:%d"%sub_shape[0],*sub_value]
+                else:
+                    for i in range(sub_shape[0]):
+                        prev_indices.append(i+1) # convert to 1-based indices
+                        recur_dimensions(prev_indices,sub_value[i],modify_args)
+                        prev_indices.pop()
+
+            prev_indices=[]
+            recur_dimensions(prev_indices,value_arr,modify_args)
+
+        if units is not None:
+            modify_args += ["source-unit",units]
+
+        self.property_instances = kim_property_modify(self.property_instances,current_instance_index,*modify_args)
 
 # If called directly, do nothing
 if __name__ == "__main__":
