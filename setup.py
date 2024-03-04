@@ -15,7 +15,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     license="CDDL",
-    install_requires=["numpy >= 1.13.1", "scipy >= 1.3.0", "jinja2 >= 2.7.2", "ase >= 3.19.0b1", "kim-property >= 2.5.7"],
+    install_requires=["numpy >= 1.13.1", "scipy >= 1.3.0", "jinja2 >= 2.7.2", "ase >= 3.19.0b1", "kim-property"],
     python_requires=">=2.7",
     classifiers=[
         "Development Status :: 4 - Beta"
