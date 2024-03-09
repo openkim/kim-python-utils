@@ -12,3 +12,5 @@ kim.log
 /tests/kim.log
 /tests/__pycache__/
 /tests/*/__pycache__/
+/tests/output/results.edn
+/tests/*/output/results.edn

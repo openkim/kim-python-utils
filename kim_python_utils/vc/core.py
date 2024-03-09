@@ -52,6 +52,7 @@ __all__ = [
     "vc_letter_grade_machine_precision",
 ]
 
+
 ################################################################################
 class KIMVCError(Exception):
     def __init__(self, msg):
