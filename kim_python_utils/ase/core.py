@@ -796,7 +796,15 @@ class KIMTest(ABC):
         self.filename = filename
 
     @abstractmethod
-    def _calculate(self, *args, **kwargs):
+    def _calculate(self, structure_index: int, *args, **kwargs):
+        """
+        Abstract calculate method
+
+        Args:
+            structure_index:
+                KIM tests can loop over multiple structures (i.e. crystals, molecules, etc.). This indicates which is being used for the current calculation.
+                TODO: Using an index here seems un-Pythonic, any way around it?
+        """
         raise NotImplementedError("Subclasses must implement the _calculate method.")
 
     def _write_to_file(self):
@@ -813,11 +821,20 @@ class KIMTest(ABC):
         """
         runs test and outputs results
         """
-        self._calculate(*args, **kwargs)
+        for i,atoms in enumerate(self.atoms):
+            # TODO: this seems like a very un-Pythonic way to do this, but I can't think of another way to give the _calculate
+            # function a way to handle multiple initial structures except mandating that the developer always include a loop in _calculate.
+            # Just passing atoms to calculate wouldn't work, what if, for example, someone has a Crystal Genome test that works directly
+            # with the symmetry-reduced description?
+
+            # still, the most common use case is an ASE calculation with Atoms, so set the calculator here
+            atoms.calc = self.model
+            
+            self._calculate(i, *args, **kwargs)
         self._validate()
         self._write_to_file()
 
-    def add_property_instance(self, property_name: str):
+    def _add_property_instance(self, property_name: str):
         """
         Initialize a new property instance to self.property_instances. It will automatically get the an instance-id
         equal to the length of self.property_instances after it is added. It assumed that if you are calling this function,
@@ -838,7 +855,7 @@ class KIMTest(ABC):
                                   "Was self.property_instances edited directly instead of using this package?")
         self.property_instances = kim_property_create(new_instance_index, property_name, self.property_instances)
 
-    def add_key_to_current_property_instance(self, name: str, value: Any, units: Optional[str] = None):
+    def _add_key_to_current_property_instance(self, name: str, value: Any, units: Optional[str] = None):
         """
         TODO: Add uncertainty output
 
@@ -966,10 +983,10 @@ class CrystalGenomeTest(KIMTest):
 
         # Don't raise errors just because you are getting unexpected combinations of inputs, who knows what a developer might want to do?       
         if atoms is not None: 
-            self.update_aflow_designation_from_atoms()     
+            self._update_aflow_designation_from_atoms()     
         elif (stoichiometric_species is not None) and (prototype_label is not None):
             # only run this code if atoms is None, so we don't overwrite an existing atoms object
-            if parameter_values_angstrom is None:
+            if (parameter_values_angstrom is None) and (model_name is not None):
                 self._query_aflow_designation_from_label_and_species()
             else:                
                 if not isinstance(parameter_values_angstrom[0],list):
@@ -981,12 +998,11 @@ class CrystalGenomeTest(KIMTest):
                 self.library_prototype_label = [None]*len(self.parameter_values_angstrom)
                 self.short_name = [None]*len(self.parameter_values_angstrom)
                 self.parameter_names = ["dummy"]*(len(self.parameter_values_angstrom[0])-1) 
-                #TODO: Get the list of parameter names from prototype (preferably without re-analyzing atoms object)
+                # TODO: Get the list of parameter names from prototype (preferably without re-analyzing atoms object)
             aflow = aflow_util.AFLOW()
             self.atoms = []
             for parameter_values_set_angstrom in self.parameter_values_angstrom:
                 self.atoms.append(aflow.build_atoms_from_prototype(stoichiometric_species,prototype_label,parameter_values_set_angstrom))
-
         
     def _query_aflow_designation_from_label_and_species(self):
         """
@@ -1040,9 +1056,9 @@ class CrystalGenomeTest(KIMTest):
             else:
                 self.short_name.append(None)            
 
-    def update_aflow_designation_from_atoms(self):
+    def _update_aflow_designation_from_atoms(self):
         """
-        Update all Crystal Genome crystal description fields from the self.atoms object
+        Update all Crystal Genome crystal description fields from the self.atoms objects. 
         """
         aflow = aflow_util.AFLOW()
         self.parameter_values_angstrom = []
@@ -1078,6 +1094,36 @@ class CrystalGenomeTest(KIMTest):
                 if sorted(list(set(atoms.get_chemical_symbols()))) != self.stoichiometric_species:
                     raise KIMASEError("It appears that the set of species in each provided atoms object is not the same!")
 
+    def _add_common_crystal_genome_keys_to_current_property_instance(self, structure_index: int, write_stress: bool = False, write_temp: bool = False):
+        """
+        Write common Crystal Genome keys -- prototype description and, optionally, stress and temperature
+
+        Args:
+            structure_index:
+                Crystal Genome tests may take multiple equilibrium crystal structures of a shared prototype label and species,
+                resulting in multiple property instances of the same property(s) possibly being written. This indicates which
+                one is being written.
+            write_stress:
+                Write the `cell-cauchy-stress` key
+            write_temp:
+                Write the `temperature` key
+        """
+        self._add_key_to_current_property_instance("prototype-label",self.prototype_label)
+        self._add_key_to_current_property_instance("stoichiometric-species",self.stoichiometric_species)
+        self._add_key_to_current_property_instance("a",self.parameter_values_angstrom[structure_index][0],"angstrom")
+        if self.parameter_names is not None:            
+            self._add_key_to_current_property_instance("parameter-names",self.parameter_names)
+            self._add_key_to_current_property_instance("parameter-values",self.parameter_values_angstrom[structure_index][1:])
+        if self.library_prototype_label[structure_index] is not None:
+            self._add_key_to_current_property_instance("library-prototype-label",self.library_prototype_label[structure_index])
+        if self.short_name[structure_index] is not None:
+            self._add_key_to_current_property_instance("short-name",self.short_name[structure_index])
+        
+        if write_stress:
+            self._add_key_to_current_property_instance("cell-cauchy-stress",self.cell_cauchy_stress_eV_angstrom3,"eV/angstrom^3")
+        if write_temp:
+            self._add_key_to_current_property_instance("temperature",self.temperature_K,"K")
+        
 # If called directly, do nothing
 if __name__ == "__main__":
     pass
