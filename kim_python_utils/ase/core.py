@@ -796,7 +796,7 @@ class KIMTest(ABC):
         self.filename = filename
 
     @abstractmethod
-    def _calculate(self, structure_index: int, *args, **kwargs):
+    def _calculate(self, structure_index: int, **kwargs):
         """
         Abstract calculate method
 
@@ -817,7 +817,7 @@ class KIMTest(ABC):
         """
         pass
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, **kwargs):
         """
         runs test and outputs results
         """
@@ -830,7 +830,7 @@ class KIMTest(ABC):
             # still, the most common use case is an ASE calculation with Atoms, so set the calculator here
             atoms.calc = self.model
             
-            self._calculate(i, *args, **kwargs)
+            self._calculate(i, **kwargs)
         self._validate()
         self._write_to_file()
 
