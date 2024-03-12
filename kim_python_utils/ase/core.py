@@ -829,8 +829,8 @@ class KIMTest(ABC):
 
             # still, the most common use case is an ASE calculation with Atoms, so set the calculator here
             atoms.calc = self.model
-            
             self._calculate(i, **kwargs)
+
         self._validate()
         self._write_to_file()
 
@@ -974,16 +974,25 @@ class CrystalGenomeTest(KIMTest):
             temperature_K:
                 The temperature in Kelvin
         """        
+        # Initialize model, atoms, output file        
+        super().__init__(model_name,model,atoms,filename)
+
         self.stoichiometric_species = stoichiometric_species
         self.prototype_label = prototype_label
         self.cell_cauchy_stress_eV_angstrom3 = cell_cauchy_stress_eV_angstrom3
         self.temperature_K = temperature_K
+        
+        self.library_prototype_label = [None]*len(self.atoms)
+        self.short_name = [None]*len(self.atoms)        
 
-        super().__init__(model_name,model,atoms,filename)
+        # Only handle expected combinations of inputs, but don't raise errors for unexpected combinations, 
+        # who knows what a developer might want to do?
+        if (self.atoms is not None) and (self.prototype_label is None) and (parameter_values_angstrom is None):
+            # placeholders for loop
+            self.parameter_values_angstrom = [None]*len(self.atoms)
 
-        # Don't raise errors just because you are getting unexpected combinations of inputs, who knows what a developer might want to do?       
-        if atoms is not None: 
-            self._update_aflow_designation_from_atoms()     
+            for i in range(len(self.atoms)):
+                self._update_aflow_designation_from_atoms(i)
         elif (stoichiometric_species is not None) and (prototype_label is not None):
             # only run this code if atoms is None, so we don't overwrite an existing atoms object
             if (parameter_values_angstrom is None) and (model_name is not None):
@@ -995,8 +1004,6 @@ class CrystalGenomeTest(KIMTest):
                     self.parameter_values_angstrom = parameter_values_angstrom                    
                 # For now, if this constructor is called to build atoms from a fully provided AFLOW designation, don't assign library prototypes to it
                 # TODO: Think about how to handle this
-                self.library_prototype_label = [None]*len(self.parameter_values_angstrom)
-                self.short_name = [None]*len(self.parameter_values_angstrom)
                 self.parameter_names = ["dummy"]*(len(self.parameter_values_angstrom[0])-1) 
                 # TODO: Get the list of parameter names from prototype (preferably without re-analyzing atoms object)
             aflow = aflow_util.AFLOW()
@@ -1056,43 +1063,47 @@ class CrystalGenomeTest(KIMTest):
             else:
                 self.short_name.append(None)            
 
-    def _update_aflow_designation_from_atoms(self):
+    def _update_aflow_designation_from_atoms(self, structure_index:int, atoms:Optional[Atoms] = None):
         """
-        Update all Crystal Genome crystal description fields from the self.atoms objects. 
+        Update the `structure_index`-th Crystal Genome crystal description fields from the corresponding self.atoms object
+        or the provided atoms object        
         """
+        if atoms is None:
+            atoms = self.atoms[structure_index]
+
         aflow = aflow_util.AFLOW()
-        self.parameter_values_angstrom = []
-        self.library_prototype_label = []
-        self.short_name = []
-        for i,atoms in enumerate(self.atoms):
-            with NamedTemporaryFile('w',delete=False) as fp: #KDP has python3.8 which is missing the convenient `delete_on_close` option
-                atoms.write(fp,format='vasp')
-                fp.close()
-                with open(fp.name) as f:
-                    proto_des = aflow.get_prototype(f.name)
-                    libproto,short_name = aflow.get_library_prototype_label_and_shortname(f.name,aflow_util.read_shortnames())
-                os.remove(fp.name)
+        with NamedTemporaryFile('w',delete=False) as fp: #KDP has python3.8 which is missing the convenient `delete_on_close` option
+            atoms.write(fp,format='vasp')
+            fp.close()
+            with open(fp.name) as f:
+                proto_des = aflow.get_prototype(f.name)
+                libproto,short_name = aflow.get_library_prototype_label_and_shortname(f.name,aflow_util.read_shortnames())
+            os.remove(fp.name)
 
-            self.parameter_values_angstrom.append(proto_des["aflow_prototype_params_values"])
-            self.library_prototype_label.append(libproto)
-            if short_name is None:
-                self.short_name.append(None)
-            else:
-                self.short_name.append([short_name])
+        self.parameter_values_angstrom[structure_index] = proto_des["aflow_prototype_params_values"]
+        self.library_prototype_label[structure_index] = libproto
+        if short_name is None:
+            self.short_name[structure_index] = None
+        else:
+            self.short_name[structure_index] = [short_name]
 
-            if i == 0:
-                self.prototype_label = proto_des["aflow_prototype_label"]
-                parameter_names = proto_des["aflow_prototype_params_list"][1:]
-                if len(parameter_names) > 1:
-                    self.parameter_names = parameter_names
-                else:
-                    self.parameter_names = None
-                self.stoichiometric_species = sorted(list(set(atoms.get_chemical_symbols())))
+        if self.prototype_label is None:
+            # we have not analyzed a single prototype yet
+            assert self.stoichiometric_species is None
+            self.prototype_label = proto_des["aflow_prototype_label"]
+            parameter_names = proto_des["aflow_prototype_params_list"][1:]
+            if len(parameter_names) > 1:
+                self.parameter_names = parameter_names
             else:
-                if proto_des["aflow_prototype_label"] != self.prototype_label:
-                    raise KIMASEError("It appears that the symmetry (i.e. AFLOW prototype label) of each provided atoms object is not the same!")
-                if sorted(list(set(atoms.get_chemical_symbols()))) != self.stoichiometric_species:
-                    raise KIMASEError("It appears that the set of species in each provided atoms object is not the same!")
+                self.parameter_names = None
+            self.stoichiometric_species = sorted(list(set(atoms.get_chemical_symbols())))
+        else:
+            if proto_des["aflow_prototype_label"] != self.prototype_label:
+                raise KIMASEError("It appears that the symmetry (i.e. AFLOW prototype label) is not uniform among provided "
+                                  "structures, or it has changed")
+            if sorted(list(set(atoms.get_chemical_symbols()))) != self.stoichiometric_species:
+                raise KIMASEError("It appears that the set of species is not uniform among provided "
+                                  "structures, or it has changed")
 
     def _add_common_crystal_genome_keys_to_current_property_instance(self, structure_index: int, write_stress: bool = False, write_temp: bool = False):
         """
