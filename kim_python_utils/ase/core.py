@@ -993,6 +993,11 @@ class CrystalGenomeTest(KIMTest):
 
             for i in range(len(self.atoms)):
                 self._update_aflow_designation_from_atoms(i)
+                # Rebuild atoms object
+                aflow = aflow_util.AFLOW()
+                self.atoms[i] = aflow.build_atoms_from_prototype(self.stoichiometric_species,self.prototype_label,self.parameter_values_angstrom[i])
+                # Error check->update_aflow_designation should catch it 
+                self._update_aflow_designation_from_atoms(i)
         elif (stoichiometric_species is not None) and (prototype_label is not None):
             # only run this code if atoms is None, so we don't overwrite an existing atoms object
             if (parameter_values_angstrom is None) and (model_name is not None):
@@ -1056,6 +1061,7 @@ class CrystalGenomeTest(KIMTest):
             else:
                 self.library_prototype_label.append(None)
             if "short-name.source-value" in parameter_set:
+                # TODO: Will all parameter sets contain identical short names? Also should we extend instead of append below?
                 short_name = parameter_set["library-prototype-label.source-value"]
                 if not isinstance(short_name,list): # Necessary because we recently changed the property definition to be a list
                     short_name = [short_name]
@@ -1134,6 +1140,40 @@ class CrystalGenomeTest(KIMTest):
             self._add_key_to_current_property_instance("cell-cauchy-stress",self.cell_cauchy_stress_eV_angstrom3,"eV/angstrom^3")
         if write_temp:
             self._add_key_to_current_property_instance("temperature",self.temperature_K,"K")
+
+# TODO: Can probably move to different location as its not ASE related 
+class Registry:
+    r"""Class for registry object which acts as central source of truth."""
+    __entries__ = {
+        "test-drivers": {},
+        "verification-checks": {},
+    }
+
+    @classmethod
+    def register_test_driver(cls, name):
+        def wrap(func):
+            cls.__entries__["test-drivers"][name] = func
+            return func
+
+        return wrap
+
+    @classmethod
+    def register_verification_check(cls, name):
+        def wrap(func):
+            cls.__entries__["verification-checks"][name] = func
+            return func
+
+        return wrap
+
+    @classmethod
+    def get_test_driver_class(cls, name):
+        return cls.__entries__["test-drivers"].get(name, None)
+
+    @classmethod
+    def get_verification_check_class(cls, name):
+        return cls.__entries__["verification-checks"].get(name, None)
+
+registry = Registry()
         
 # If called directly, do nothing
 if __name__ == "__main__":
