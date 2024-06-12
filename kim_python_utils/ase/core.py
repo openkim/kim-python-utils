@@ -218,6 +218,8 @@ def get_isolated_energy_per_atom(model, symbol):
     calc = KIM(model)
     single_atom.calc=calc
     energy_per_atom = single_atom.get_potential_energy()
+    if hasattr(calc, "clean"):
+        calc.clean()
     if hasattr(calc, "__del__"):
         calc.__del__()
     del single_atom
@@ -344,6 +346,8 @@ def check_if_atoms_interacting_energy(model, symbols, etol):
         atoms_interacting = False
         return atoms_interacting
     finally:
+        if hasattr(calc, "clean"):
+            calc.clean()
         if hasattr(calc, "__del__"):
             calc.__del__()
         del dimer
@@ -380,6 +384,8 @@ def check_if_atoms_interacting_force(model, symbols, ftol):
         atoms_interacting = False
         return atoms_interacting
     finally:
+        if hasattr(calc, "clean"):
+            calc.clean()
         if hasattr(calc, "__del__"):
             calc.__del__()
         del dimer
@@ -660,6 +666,8 @@ def get_model_energy_cutoff(
     while still_interacting:
         b += db
         if b > max_upper_cutoff_bracket:
+            if hasattr(calc, "clean"):
+                calc.clean()
             if hasattr(calc, "__del__"):
                 calc.__del__()
 
@@ -678,6 +686,8 @@ def get_model_energy_cutoff(
     while not_interacting:
         a -= da
         if a < 0:
+            if hasattr(calc, "clean"):
+                calc.clean()
             if hasattr(calc, "__del__"):
                 calc.__del__()
 
@@ -723,6 +733,8 @@ def get_model_energy_cutoff(
     )
 
     # General clean-up
+    if hasattr(calc, "clean"):
+        calc.clean()
     if hasattr(calc, "__del__"):
         calc.__del__()
 
