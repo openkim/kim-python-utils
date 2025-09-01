@@ -410,7 +410,7 @@ def check_if_atoms_interacting(
         atoms_interacting_energy = check_if_atoms_interacting_energy(
             model, symbols, etol
         )
-        atoms_interacting_force = check_if_atoms_interacting_energy(
+        atoms_interacting_force = check_if_atoms_interacting_force(
             model, symbols, ftol
         )
         return atoms_interacting_energy, atoms_interacting_force
